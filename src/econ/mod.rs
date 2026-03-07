@@ -22,4 +22,22 @@ mod tests {
             "Result: {out}, Expected: 189.2857",
         );
     }
+
+    #[test]
+    fn test_pv_unispread_with_init_returns_expected_val() {
+        let out = cashflow::pv_unispread(100.00, 2, 0.12, true);
+        assert!(
+            (out - 29.6348).abs() < 0.1,
+            "Result: {out}, Expected: 29.6348",
+        );
+    }
+
+    #[test]
+    fn test_pv_unispread_without_init_returns_expected_val() {
+        let out = cashflow::pv_unispread(100.00, 2, 0.12, false);
+        assert!(
+            (out - 42.1159).abs() < 0.1,
+            "Result: {out}, Expected: 42.1159",
+        );
+    }
 }
