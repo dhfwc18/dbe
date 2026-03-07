@@ -1,5 +1,5 @@
 // src/econ/cashflow.rs
-
+#[inline]
 pub fn cal_pv(val: f64, rate: f64, step: f64) -> f64 {
     val / (1.0 + rate).powf(step)
 }
