@@ -1,4 +1,4 @@
-use super::super::econ::cashflow;
+use dbe::econ::cashflow;
 use pyo3::prelude::*;
 
 #[pyfunction]
