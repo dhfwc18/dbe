@@ -12,9 +12,10 @@ requires-python = ">=3.13"
 python-source = "pydbe"
 module-name = "._core"
 features = ["pyo3/extension-module"]
+manifest-path = "crates/python/Cargo.toml"
 
 [tool.pytest]
-testpaths = ["pydbe_tests"]
+testpaths = ["tests"]
 pythonpath = ["."]
 
 [dependency-groups]
