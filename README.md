@@ -1,5 +1,9 @@
 # DBE
 
+[![crates.io: dbe-cashflow](https://img.shields.io/crates/v/dbe-cashflow.svg)](https://crates.io/crates/dbe-cashflow)
+[![crates.io: dbe-ct](https://img.shields.io/crates/v/dbe-ct.svg)](https://crates.io/crates/dbe-ct)
+[![PyPI: dbe](https://img.shields.io/pypi/v/dbe.svg)](https://pypi.org/project/dbe/)
+
 This library is a Rust crate that provides a collection of core economic
 functionalities, with optional Python bindings exposed through a native extension.
 
