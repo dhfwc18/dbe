@@ -2,6 +2,14 @@
 name = "dbe-cashflow"
 version = "0.1.0"
 edition = "2024"
+description = "Core discounted-cashflow utilities for present-value analysis."
+license-file = "../../LICENSE.txt"
+readme = "README.md"
+repository = "https://github.com/dhfwc18/dbe"
+homepage = "https://github.com/dhfwc18/dbe"
+documentation = "https://docs.rs/dbe-cashflow"
+keywords = ["economics", "finance", "cashflow", "discounting"]
+categories = ["finance"]
 
 [dependencies]
 sobol_burley = "0.5.0"

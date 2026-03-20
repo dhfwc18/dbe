@@ -2,11 +2,17 @@
 name = "dbe-python"
 version = "0.1.0"
 edition = "2024"
+publish = false
+description = "Internal PyO3 bridge crate for the dbe Python package."
+license-file = "../../LICENSE.txt"
+readme = "../../README.md"
+repository = "https://github.com/dhfwc18/dbe"
+homepage = "https://github.com/dhfwc18/dbe"
 
 [dependencies]
-pyo3 = { version = "0.28.2", features = ["extension-module"] }
-dbe-cashflow = { path = "../dbe-cashflow" }
-dbe-ct = { path = "../dbe-ct" }
+pyo3 = { version = "0.28.2", features = ["extension-module", "abi3-py39"] }
+dbe-cashflow = { version = "0.1.0", path = "../dbe-cashflow" }
+dbe-ct = { version = "0.1.0", path = "../dbe-ct" }
 
 [lib]
 name = "_core"
