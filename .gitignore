@@ -1,6 +1,2 @@
 /target
-__pycache__/
-*.pyd
-*.so
-*.dll
-*.pdb
+.pytest_cache/
