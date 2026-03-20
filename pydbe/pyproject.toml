@@ -8,13 +8,17 @@ version = "0.1.0"
 description = "Collection of basic economic functionalities."
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.13"
+requires-python = ">=3.9"
 authors = [
     { name = "David Huang" },
 ]
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Rust",
 ]
@@ -24,10 +28,16 @@ Homepage = "https://github.com/dhfwc18/dbe"
 Repository = "https://github.com/dhfwc18/dbe"
 Issues = "https://github.com/dhfwc18/dbe/issues"
 
+[tool.uv]
+default-groups = []
+
+[tool.uv.dependency-groups]
+dev = { requires-python = ">=3.10" }
+
 [tool.maturin]
 python-source = "src"
 module-name = "dbe._core"
-features = ["pyo3/extension-module"]
+features = ["pyo3/extension-module", "pyo3/abi3-py39"]
 manifest-path = "../crates/dbe-python/Cargo.toml"
 
 [tool.pytest]
