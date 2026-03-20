@@ -1,8 +1,8 @@
 // src/econ/cashflow.rs
 #[inline]
 pub fn cal_pv(val: f64, rate: f64, step: f64) -> f64 {
-    debug_assert!(rate > -1.0, "Discount rate must be greater than -100%");
-    debug_assert!(step >= 0.0, "Step should generally be non-negative");
+    assert!(rate > -1.0, "Discount rate must be greater than -100%");
+    assert!(step >= 0.0, "Step should generally be non-negative");
 
     val / (1.0 + rate).powf(step)
 }
@@ -36,7 +36,7 @@ pub fn cal_pv_from_cf(cf: &[f64], rate: f64) -> f64 {
 /// * `rate` - The discount rate against which the cashflow is evaluated at
 /// * `w_init` - Whether to account for an undiscounted year 0 value
 pub fn pv_unispread(t_pv: f64, t_steps: i32, rate: f64, w_init: bool) -> f64 {
-    debug_assert!(t_steps >= 0, "Steps must be non-negative");
+    assert!(t_steps >= 0, "Steps must be non-negative");
     if t_steps < 0 || rate <= -1.0 {
         return f64::NAN;
     }

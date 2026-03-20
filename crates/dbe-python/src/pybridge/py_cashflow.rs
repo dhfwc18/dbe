@@ -1,5 +1,33 @@
 use dbe_cashflow as cashflow;
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
+
+fn validate_discount_rate(discount_rate: f64) -> PyResult<()> {
+    if discount_rate <= -1.0 {
+        return Err(PyErr::new::<PyValueError, _>(
+            "Discount rate must be greater than -100%",
+        ));
+    }
+    Ok(())
+}
+
+fn validate_timestep(timestep: f64) -> PyResult<()> {
+    if timestep < 0.0 {
+        return Err(PyErr::new::<PyValueError, _>(
+            "Step should generally be non-negative",
+        ));
+    }
+    Ok(())
+}
+
+fn validate_steps(t_steps: i32) -> PyResult<()> {
+    if t_steps < 0 {
+        return Err(PyErr::new::<PyValueError, _>(
+            "Steps must be non-negative",
+        ));
+    }
+    Ok(())
+}
 
 /// Discount a single cashflow to present value.
 ///
@@ -20,6 +48,8 @@ use pyo3::prelude::*;
 #[pyo3(name = "calculate_pv")]
 #[pyo3(text_signature = "(cashflow, discount_rate, timestep, /)")]
 pub fn py_cal_pv(cashflow_value: f64, discount_rate: f64, timestep: f64) -> PyResult<f64> {
+    validate_discount_rate(discount_rate)?;
+    validate_timestep(timestep)?;
     Ok(cashflow::cal_pv(cashflow_value, discount_rate, timestep))
 }
 
@@ -40,6 +70,7 @@ pub fn py_cal_pv(cashflow_value: f64, discount_rate: f64, timestep: f64) -> PyRe
 #[pyo3(name = "calculate_pv_from_cashflows")]
 #[pyo3(text_signature = "(cashflows, discount_rate, /)")]
 pub fn py_cal_pv_from_cf(cashflows: Vec<f64>, discount_rate: f64) -> PyResult<f64> {
+    validate_discount_rate(discount_rate)?;
     Ok(cashflow::cal_pv_from_cf(&cashflows, discount_rate))
 }
 
@@ -65,5 +96,7 @@ pub fn py_cal_pv_from_cf(cashflows: Vec<f64>, discount_rate: f64) -> PyResult<f6
 #[pyo3(signature = (t_pv, t_steps, discount_rate, w_init = false))]
 #[pyo3(text_signature = "(t_pv, t_steps, discount_rate, w_init=False, /)")]
 pub fn py_pv_unispread(t_pv: f64, t_steps: i32, discount_rate: f64, w_init: bool) -> PyResult<f64> {
+    validate_steps(t_steps)?;
+    validate_discount_rate(discount_rate)?;
     Ok(cashflow::pv_unispread(t_pv, t_steps, discount_rate, w_init))
 }
