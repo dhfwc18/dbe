@@ -6,11 +6,11 @@ use dbe_ct::{
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
-/// PyO3 wrapper around `Preference<F>`.
+/// Represents a consumer's preference over bundles of goods.
 ///
 /// Accepts a Python callable as the utility function. Validation of the
-/// Axioms of Rationality is run on construction (unless `validate=False`).
-#[pyclass(name = "PyPreference")]
+/// axioms of rationality is run on construction unless `validate=False`.
+#[pyclass(name = "Preference")]
 pub struct PyPreference {
     pub(crate) utility_func: Py<PyAny>,
     pub(crate) min_bounds: Vec<f64>,
@@ -21,6 +21,7 @@ pub struct PyPreference {
 
 #[pymethods]
 impl PyPreference {
+    /// Create a validated consumer preference.
     #[new]
     #[pyo3(signature = (
         utility_func,
@@ -100,12 +101,12 @@ impl PyPreference {
         })
     }
 
-    /// Evaluates the utility function at the given bundle.
+    /// Evaluate the utility function at the given bundle.
     fn get_utility(&self, py: Python<'_>, bundle: Vec<f64>) -> PyResult<f64> {
         self.utility_func.call1(py, (bundle,))?.extract(py)
     }
 
-    /// Computes marginal utility for a specific good via central differences.
+    /// Compute marginal utility for a specific good via central differences.
     fn get_mu(&self, py: Python<'_>, bundle: Vec<f64>, good: usize) -> PyResult<f64> {
         let ep = self.calc_config.epsilon;
         let mut inc = bundle.clone();
@@ -117,7 +118,7 @@ impl PyPreference {
         Ok((u_inc - u_dec) / (2.0 * ep))
     }
 
-    /// Computes the marginal rate of substitution between good_i and good_j.
+    /// Compute the marginal rate of substitution between good_i and good_j.
     fn get_mrs(
         &self,
         py: Python<'_>,
@@ -136,7 +137,7 @@ impl PyPreference {
     }
 }
 
-/// Finds the optimal consumption bundle that maximises utility subject to a
+/// Find the consumption bundle that maximises utility subject to a
 /// budget constraint.
 ///
 /// Uses an interior-point log-barrier method with backtracking line search.
@@ -146,7 +147,7 @@ impl PyPreference {
 /// * `prices` - Price vector, must match the number of goods in `pref`
 /// * `income` - Total income available to the consumer
 #[pyfunction]
-#[pyo3(name = "rs_optimal_bundle")]
+#[pyo3(name = "optimal_bundle")]
 #[pyo3(signature = (
     pref,
     prices,
@@ -159,6 +160,9 @@ impl PyPreference {
     step_size = 1e-2,
     tol = 1e-8,
 ))]
+#[pyo3(
+    text_signature = "(pref, prices, income, *, mu_init=1.0, mu_decay=0.1, outer_iters=10, inner_iters=500, step_size=1e-2, tol=1e-8)"
+)]
 pub fn py_optimal_bundle(
     py: Python<'_>,
     pref: &PyPreference,
@@ -206,7 +210,7 @@ pub fn py_optimal_bundle(
         .map_err(|e| PyErr::new::<PyValueError, _>(e))
 }
 
-/// Traces an indifference curve in the plane of two goods.
+/// Trace an indifference curve in the plane of two goods.
 ///
 /// Grids `good_i` across its bounds and uses bisection to find the value of
 /// `good_j` such that U(x) = `target_utility`. All other goods are held
@@ -218,8 +222,9 @@ pub fn py_optimal_bundle(
 /// * `good_i` - Index of the good on the x-axis (gridded)
 /// * `good_j` - Index of the good on the y-axis (solved via bisection)
 #[pyfunction]
-#[pyo3(name = "rs_trace_2d")]
+#[pyo3(name = "trace_indifference_curve")]
 #[pyo3(signature = (pref, target_utility, good_i, good_j, *, n_points = 200, tol = 1e-10))]
+#[pyo3(text_signature = "(pref, target_utility, good_i, good_j, *, n_points=200, tol=1e-10)")]
 pub fn py_trace_2d(
     py: Python<'_>,
     pref: &PyPreference,
