@@ -16,5 +16,17 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
         m
     )?)?;
     m.add_function(wrap_pyfunction!(pybridge::py_consumer::py_trace_2d, m)?)?;
+    m.add_function(wrap_pyfunction!(
+        pybridge::py_consumer::py_get_standard_config,
+        m
+    )?)?;
+    m.add_function(wrap_pyfunction!(
+        pybridge::py_consumer::py_set_standard_config,
+        m
+    )?)?;
+    m.add_function(wrap_pyfunction!(
+        pybridge::py_consumer::py_restore_standard_config,
+        m
+    )?)?;
     Ok(())
 }

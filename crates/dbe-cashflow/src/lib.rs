@@ -32,7 +32,7 @@ pub fn cal_pv_from_cf(cf: &[f64], rate: f64) -> f64 {
 /// # Arguments
 /// * `t_pv` - The target present value to be achieved
 /// * `t_steps` - Number of steps (excluding step 0) into the future in which the target
-///               is expected to be achieved
+///   is expected to be achieved
 /// * `rate` - The discount rate against which the cashflow is evaluated at
 /// * `w_init` - Whether to account for an undiscounted year 0 value
 pub fn pv_unispread(t_pv: f64, t_steps: i32, rate: f64, w_init: bool) -> f64 {

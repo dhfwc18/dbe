@@ -1,4 +1,4 @@
-use super::pref::Preference;
+use super::pref::{FalliblePreference, Preference, PreferenceError, StandardConfig};
 
 /// A linear budget constraint: p * x <= income
 pub struct BudgetConstraint {
@@ -27,13 +27,14 @@ pub struct OptimConfig {
 
 impl Default for OptimConfig {
     fn default() -> Self {
+        let standard = StandardConfig::get();
         Self {
-            mu_init: 1.0,
-            mu_decay: 0.1,
-            outer_iters: 10,
-            inner_iters: 500,
-            step_size: 1e-2,
-            tol: 1e-8,
+            mu_init: standard.optimization.optim_mu_init,
+            mu_decay: standard.optimization.optim_mu_decay,
+            outer_iters: standard.optimization.optim_outer_iters,
+            inner_iters: standard.optimization.optim_inner_iters,
+            step_size: standard.optimization.optim_step_size,
+            tol: standard.optimization.optim_tol,
         }
     }
 }
@@ -132,6 +133,86 @@ pub fn optimal_bundle<F: Fn(&[f64]) -> f64>(
     Ok(x)
 }
 
+pub fn optimal_bundle_fallible<F, E>(
+    pref: &FalliblePreference<F, E>,
+    constraint: &BudgetConstraint,
+    config: OptimConfig,
+) -> Result<Vec<f64>, PreferenceError<E>>
+where
+    F: Fn(&[f64]) -> Result<f64, E>,
+{
+    let lb = pref.min_bounds();
+    let ub = pref.max_bounds();
+    let dims = lb.len();
+    let prices = &constraint.prices;
+    let income = constraint.income;
+
+    if prices.len() != dims {
+        return Err(PreferenceError::Config(
+            "prices length must match the number of goods in the Preference".into(),
+        ));
+    }
+    if income <= 0.0 {
+        return Err(PreferenceError::Config("income must be positive".into()));
+    }
+    if prices.iter().any(|&p| p <= 0.0) {
+        return Err(PreferenceError::Config(
+            "all prices must be positive".into(),
+        ));
+    }
+
+    let mut x: Vec<f64> = (0..dims)
+        .map(|i| {
+            let equal_share = income / (dims as f64 * prices[i]);
+            lb[i] + 0.5 * (equal_share.min(ub[i]) - lb[i])
+        })
+        .collect();
+
+    if !is_feasible(&x, lb, ub, prices, income) {
+        return Err(PreferenceError::Config(
+            "Could not find a feasible interior starting point".into(),
+        ));
+    }
+
+    let mut mu = config.mu_init;
+
+    for _ in 0..config.outer_iters {
+        for _ in 0..config.inner_iters {
+            let grad = barrier_gradient_fallible(pref, &x, lb, ub, prices, income, mu)?;
+            let grad_norm: f64 = grad.iter().map(|g| g * g).sum::<f64>().sqrt();
+            if grad_norm < config.tol {
+                return Ok(x);
+            }
+
+            let b_current = barrier_value_fallible(pref, &x, lb, ub, prices, income, mu)?;
+            let mut step = config.step_size;
+            let x_new = loop {
+                let candidate: Vec<f64> =
+                    x.iter().zip(&grad).map(|(xi, gi)| xi + step * gi).collect();
+
+                if is_feasible(&candidate, lb, ub, prices, income) {
+                    let b_new =
+                        barrier_value_fallible(pref, &candidate, lb, ub, prices, income, mu)?;
+                    if b_new > b_current {
+                        break candidate;
+                    }
+                }
+
+                step *= 0.5;
+                if step < 1e-15 {
+                    break x.clone();
+                }
+            };
+
+            x = x_new;
+        }
+
+        mu *= config.mu_decay;
+    }
+
+    Ok(x)
+}
+
 /// Evaluates the log-barrier objective at a given point.
 fn barrier_value<F: Fn(&[f64]) -> f64>(
     pref: &Preference<F>,
@@ -167,6 +248,48 @@ fn barrier_gradient<F: Fn(&[f64]) -> f64>(
             let lb_term = mu / (x[i] - lb[i]);
             let ub_term = -mu / (ub[i] - x[i]);
             du + budget_term + lb_term + ub_term
+        })
+        .collect()
+}
+
+fn barrier_value_fallible<F, E>(
+    pref: &FalliblePreference<F, E>,
+    x: &[f64],
+    lb: &[f64],
+    ub: &[f64],
+    prices: &[f64],
+    income: f64,
+    mu: f64,
+) -> Result<f64, PreferenceError<E>>
+where
+    F: Fn(&[f64]) -> Result<f64, E>,
+{
+    let budget_slack = income - dot(prices, x);
+    let lb_slack: f64 = x.iter().zip(lb).map(|(xi, li)| (xi - li).ln()).sum();
+    let ub_slack: f64 = x.iter().zip(ub).map(|(xi, ui)| (ui - xi).ln()).sum();
+    Ok(pref.get_utility(x)? + mu * (budget_slack.ln() + lb_slack + ub_slack))
+}
+
+fn barrier_gradient_fallible<F, E>(
+    pref: &FalliblePreference<F, E>,
+    x: &[f64],
+    lb: &[f64],
+    ub: &[f64],
+    prices: &[f64],
+    income: f64,
+    mu: f64,
+) -> Result<Vec<f64>, PreferenceError<E>>
+where
+    F: Fn(&[f64]) -> Result<f64, E>,
+{
+    let budget_slack = income - dot(prices, x);
+    (0..x.len())
+        .map(|i| {
+            let du = pref.get_mu(x, i)?;
+            let budget_term = -mu * prices[i] / budget_slack;
+            let lb_term = mu / (x[i] - lb[i]);
+            let ub_term = -mu / (ub[i] - x[i]);
+            Ok(du + budget_term + lb_term + ub_term)
         })
         .collect()
 }

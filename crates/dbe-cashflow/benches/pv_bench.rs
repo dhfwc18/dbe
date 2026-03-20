@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use dbe_cashflow as cashflow;
 
 fn bench_pv_batch(c: &mut Criterion) {
