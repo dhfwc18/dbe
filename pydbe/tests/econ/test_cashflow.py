@@ -1,6 +1,6 @@
 import pytest
 
-from pydbe.econ import cashflow
+from dbe.econ import cashflow
 
 
 def test_cal_pv_with_std_inputs_return_expected_val():

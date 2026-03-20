@@ -3,23 +3,21 @@ requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "pydbe"
+name = "dbe"
 version = "0.1.0"
 description = "Collection of basic economic functionalities."
 requires-python = ">=3.13"
 
 [tool.maturin]
-python-source = "pydbe"
-module-name = "._core"
+python-source = "src"
+module-name = "dbe._core"
 features = ["pyo3/extension-module"]
-manifest-path = "crates/python/Cargo.toml"
+manifest-path = "../crates/dbe-python/Cargo.toml"
 
 [tool.pytest]
 testpaths = ["tests"]
-pythonpath = ["."]
 
 [dependency-groups]
 dev = [
-    "maturin>=1.12.6",
     "pytest>=9.0.2",
 ]

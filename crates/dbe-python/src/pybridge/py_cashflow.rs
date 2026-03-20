@@ -1,4 +1,4 @@
-use dbe::econ::cashflow;
+use dbe_cashflow as cashflow;
 use pyo3::prelude::*;
 
 #[pyfunction]

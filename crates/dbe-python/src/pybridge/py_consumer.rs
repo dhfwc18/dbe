@@ -1,4 +1,4 @@
-use dbe::econ::consumer::{
+use dbe_ct::{
     indifference::{self, IndiffConfig},
     marshallian::{self, BudgetConstraint, OptimConfig},
     pref::{CalcConfig, Preference, ValidationConfig},
@@ -81,7 +81,8 @@ impl PyPreference {
                         .unwrap()
                         .extract::<f64>(py2)
                         .unwrap()
-                }).unwrap()
+                })
+                .unwrap()
             },
             min_bounds.clone(),
             max_bounds.clone(),
@@ -181,7 +182,8 @@ pub fn py_optimal_bundle(
                     .unwrap()
                     .extract::<f64>(py2)
                     .unwrap()
-            }).unwrap()
+            })
+            .unwrap()
         },
         pref.min_bounds.clone(),
         pref.max_bounds.clone(),
@@ -238,7 +240,8 @@ pub fn py_trace_2d(
                     .unwrap()
                     .extract::<f64>(py2)
                     .unwrap()
-            }).unwrap()
+            })
+            .unwrap()
         },
         pref.min_bounds.clone(),
         pref.max_bounds.clone(),

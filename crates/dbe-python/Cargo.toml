@@ -5,7 +5,8 @@ edition = "2024"
 
 [dependencies]
 pyo3 = { version = "0.28.2", features = ["extension-module"] }
-dbe = { path = "../core" }
+dbe-cashflow = { path = "../dbe-cashflow" }
+dbe-ct = { path = "../dbe-ct" }
 
 [lib]
 name = "_core"

@@ -1,4 +1,4 @@
-from pydbe._core import rs_cal_pv, rs_cal_pv_from_cf, rs_pv_unispread
+from dbe._core import rs_cal_pv, rs_cal_pv_from_cf, rs_pv_unispread
 
 
 def calculate_pv(cashflow: float, discount_rate: float, timestep: float) -> float:

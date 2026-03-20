@@ -1,6 +1,3 @@
 [workspace]
-members = [
-    "crates/core",
-    "crates/python"
-]
+members = [ "crates/dbe-cashflow", "crates/dbe-ct", "crates/dbe-python" ]
 resolver = "2"

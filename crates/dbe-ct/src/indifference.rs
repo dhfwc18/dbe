@@ -155,7 +155,7 @@ fn bisect<F: Fn(&[f64]) -> f64>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::econ::consumer::pref::Preference;
+    use crate::pref::Preference;
 
     // Cobb-Douglas: U(x, y) = sqrt(x * y)
     fn cobb_douglas(bundle: &[f64]) -> f64 {

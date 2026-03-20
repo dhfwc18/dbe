@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from pydbe._core import PyPreference, rs_optimal_bundle, rs_trace_2d
+from dbe._core import PyPreference, rs_optimal_bundle, rs_trace_2d
 
 
 class Preference:
