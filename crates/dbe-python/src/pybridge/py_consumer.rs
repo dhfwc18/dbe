@@ -89,10 +89,19 @@ fn map_preference_error(error: PreferenceError<PyErr>) -> PyErr {
     }
 }
 
-/// Represents a consumer's preference over bundles of goods.
+/// Consumer preference over bundles of goods.
 ///
-/// Accepts a Python callable as the utility function. Validation of the
-/// axioms of rationality is run on construction unless `validate=False`.
+/// Parameters
+/// ----------
+/// utility_func : callable
+///     Python callable taking a bundle and returning utility.
+/// min_bounds : list[float]
+///     Lower bound for each good.
+/// max_bounds : list[float]
+///     Upper bound for each good.
+/// validate : bool, optional
+///     Whether to validate the preference against the default rationality
+///     checks during construction.
 #[pyclass(name = "Preference")]
 pub struct PyPreference {
     pub(crate) utility_func: Py<PyAny>,
@@ -102,7 +111,7 @@ pub struct PyPreference {
 
 #[pymethods]
 impl PyPreference {
-    /// Create a validated consumer preference.
+    /// Create a consumer preference object.
     #[new]
     #[pyo3(signature = (
         utility_func,
@@ -134,13 +143,35 @@ impl PyPreference {
         })
     }
 
-    /// Evaluate the utility function at the given bundle.
+    /// Evaluate utility at a bundle.
+    ///
+    /// Parameters
+    /// ----------
+    /// bundle : list[float]
+    ///     Consumption bundle to evaluate.
+    ///
+    /// Returns
+    /// -------
+    /// float
+    ///     Utility at the supplied bundle.
     fn get_utility(&self, py: Python<'_>, bundle: Vec<f64>) -> PyResult<f64> {
         validate_bundle(&bundle, self.min_bounds.len())?;
         self.utility_func.call1(py, (bundle,))?.extract(py)
     }
 
-    /// Compute marginal utility for a specific good via central differences.
+    /// Estimate marginal utility for one good via central differences.
+    ///
+    /// Parameters
+    /// ----------
+    /// bundle : list[float]
+    ///     Consumption bundle at which to evaluate marginal utility.
+    /// good : int
+    ///     Index of the good to differentiate with respect to.
+    ///
+    /// Returns
+    /// -------
+    /// float
+    ///     Estimated marginal utility.
     fn get_mu(&self, py: Python<'_>, bundle: Vec<f64>, good: usize) -> PyResult<f64> {
         validate_bundle(&bundle, self.min_bounds.len())?;
         validate_good_index(good, self.min_bounds.len(), "good")?;
@@ -154,7 +185,21 @@ impl PyPreference {
         Ok((u_inc - u_dec) / (2.0 * ep))
     }
 
-    /// Compute the marginal rate of substitution between good_i and good_j.
+    /// Compute the marginal rate of substitution between two goods.
+    ///
+    /// Parameters
+    /// ----------
+    /// bundle : list[float]
+    ///     Consumption bundle at which to evaluate the rate.
+    /// good_i : int
+    ///     Numerator good index.
+    /// good_j : int
+    ///     Denominator good index.
+    ///
+    /// Returns
+    /// -------
+    /// float
+    ///     Marginal rate of substitution ``MU_i / MU_j``.
     fn get_mrs(
         &self,
         py: Python<'_>,
@@ -176,15 +221,26 @@ impl PyPreference {
     }
 }
 
-/// Find the consumption bundle that maximises utility subject to a
-/// budget constraint.
+/// Find the utility-maximising bundle under a budget constraint.
 ///
 /// Uses an interior-point log-barrier method with backtracking line search.
 ///
-/// # Arguments
-/// * `pref` - A `PyPreference` whose rationality axioms are already enforced
-/// * `prices` - Price vector, must match the number of goods in `pref`
-/// * `income` - Total income available to the consumer
+/// Parameters
+/// ----------
+/// pref : Preference
+///     Preference object supplying utility and bounds.
+/// prices : list[float]
+///     Positive price vector with one entry per good.
+/// income : float
+///     Total income available to the consumer.
+/// options : dict, optional
+///     Optimisation overrides. Supported keys are ``mu_init``, ``mu_decay``,
+///     ``outer_iters``, ``inner_iters``, ``step_size``, and ``tol``.
+///
+/// Returns
+/// -------
+/// list[float]
+///     Utility-maximising bundle within the supplied bounds and budget.
 #[pyfunction]
 #[pyo3(name = "optimal_bundle")]
 #[pyo3(signature = (pref, prices, income, options = None))]
@@ -201,50 +257,64 @@ pub fn py_optimal_bundle(
     let constraint = BudgetConstraint { prices, income };
 
     if let Some(dict) = options {
-        set_nested_f64(&dict, "mu_init", &mut standard.optimization.optim_mu_init)?;
-        set_nested_f64(&dict, "mu_decay", &mut standard.optimization.optim_mu_decay)?;
+        set_nested_f64(&dict, "mu_init", &mut standard.optimisation.optim_mu_init)?;
+        set_nested_f64(&dict, "mu_decay", &mut standard.optimisation.optim_mu_decay)?;
         set_nested_usize(
             &dict,
             "outer_iters",
-            &mut standard.optimization.optim_outer_iters,
+            &mut standard.optimisation.optim_outer_iters,
         )?;
         set_nested_usize(
             &dict,
             "inner_iters",
-            &mut standard.optimization.optim_inner_iters,
+            &mut standard.optimisation.optim_inner_iters,
         )?;
         set_nested_f64(
             &dict,
             "step_size",
-            &mut standard.optimization.optim_step_size,
+            &mut standard.optimisation.optim_step_size,
         )?;
-        set_nested_f64(&dict, "tol", &mut standard.optimization.optim_tol)?;
+        set_nested_f64(&dict, "tol", &mut standard.optimisation.optim_tol)?;
     }
 
     let optim_config = OptimConfig {
-        mu_init: standard.optimization.optim_mu_init,
-        mu_decay: standard.optimization.optim_mu_decay,
-        outer_iters: standard.optimization.optim_outer_iters,
-        inner_iters: standard.optimization.optim_inner_iters,
-        step_size: standard.optimization.optim_step_size,
-        tol: standard.optimization.optim_tol,
+        mu_init: standard.optimisation.optim_mu_init,
+        mu_decay: standard.optimisation.optim_mu_decay,
+        outer_iters: standard.optimisation.optim_outer_iters,
+        inner_iters: standard.optimisation.optim_inner_iters,
+        step_size: standard.optimisation.optim_step_size,
+        tol: standard.optimisation.optim_tol,
     };
 
     marshallian::optimal_bundle_fallible(&rust_pref, &constraint, optim_config)
         .map_err(map_preference_error)
 }
 
-/// Trace an indifference curve in the plane of two goods.
+/// Trace an indifference curve between two goods.
 ///
 /// Grids `good_i` across its bounds and uses bisection to find the value of
 /// `good_j` such that U(x) = `target_utility`. All other goods are held
 /// fixed at the midpoint of their bounds.
 ///
-/// # Arguments
-/// * `pref` - A `PyPreference` whose rationality axioms are already enforced
-/// * `target_utility` - The utility level U* to trace
-/// * `good_i` - Index of the good on the x-axis (gridded)
-/// * `good_j` - Index of the good on the y-axis (solved via bisection)
+/// Parameters
+/// ----------
+/// pref : Preference
+///     Preference object supplying utility and bounds.
+/// target_utility : float
+///     Utility level to trace.
+/// good_i : int
+///     Index of the good used on the x-axis.
+/// good_j : int
+///     Index of the good solved for on the y-axis.
+/// n_points : int, optional
+///     Number of grid points for the traced curve.
+/// tol : float, optional
+///     Solver tolerance for the bisection step.
+///
+/// Returns
+/// -------
+/// list[tuple[float, float]]
+///     Traced indifference points as ``(x_i, x_j)`` pairs.
 #[pyfunction]
 #[pyo3(name = "trace_indifference_curve")]
 #[pyo3(signature = (pref, target_utility, good_i, good_j, *, n_points = None, tol = None))]
@@ -268,7 +338,13 @@ pub fn py_trace_2d(
         .map_err(map_preference_error)
 }
 
-/// Get the shared standard consumer-theory configuration.
+/// Return the shared default consumer-theory configuration.
+///
+/// Returns
+/// -------
+/// dict
+///     Nested configuration grouped by preference, indifference, and
+///     optimisation settings.
 #[pyfunction]
 #[pyo3(name = "get_standard_config")]
 pub fn py_get_standard_config(py: Python<'_>) -> PyResult<Py<PyDict>> {
@@ -294,25 +370,34 @@ pub fn py_get_standard_config(py: Python<'_>) -> PyResult<Py<PyDict>> {
     indifference.set_item("tol", config.indifference.indiff_tol)?;
     out.set_item("indifference", indifference)?;
 
-    let optimization = PyDict::new(py);
-    optimization.set_item("mu_init", config.optimization.optim_mu_init)?;
-    optimization.set_item("mu_decay", config.optimization.optim_mu_decay)?;
-    optimization.set_item("outer_iters", config.optimization.optim_outer_iters)?;
-    optimization.set_item("inner_iters", config.optimization.optim_inner_iters)?;
-    optimization.set_item("step_size", config.optimization.optim_step_size)?;
-    optimization.set_item("tol", config.optimization.optim_tol)?;
-    out.set_item("optimization", optimization)?;
+    let optimisation = PyDict::new(py);
+    optimisation.set_item("mu_init", config.optimisation.optim_mu_init)?;
+    optimisation.set_item("mu_decay", config.optimisation.optim_mu_decay)?;
+    optimisation.set_item("outer_iters", config.optimisation.optim_outer_iters)?;
+    optimisation.set_item("inner_iters", config.optimisation.optim_inner_iters)?;
+    optimisation.set_item("step_size", config.optimisation.optim_step_size)?;
+    optimisation.set_item("tol", config.optimisation.optim_tol)?;
+    out.set_item("optimisation", optimisation)?;
     Ok(out.unbind())
 }
 
-/// Update the shared standard consumer-theory configuration.
+/// Update the shared default consumer-theory configuration.
+///
+/// Parameters
+/// ----------
+/// preference : dict, optional
+///     Preference default overrides.
+/// indifference : dict, optional
+///     Indifference-tracing default overrides.
+/// optimisation : dict, optional
+///     Optimisation default overrides.
 #[pyfunction]
 #[pyo3(name = "set_standard_config")]
-#[pyo3(signature = (*, preference = None, indifference = None, optimization = None))]
+#[pyo3(signature = (*, preference = None, indifference = None, optimisation = None))]
 pub fn py_set_standard_config(
     preference: Option<Bound<'_, PyDict>>,
     indifference: Option<Bound<'_, PyDict>>,
-    optimization: Option<Bound<'_, PyDict>>,
+    optimisation: Option<Bound<'_, PyDict>>,
 ) -> PyResult<()> {
     let mut config = StandardConfig::get();
 
@@ -349,28 +434,28 @@ pub fn py_set_standard_config(
         set_nested_f64(&dict, "tol", &mut config.indifference.indiff_tol)?;
     }
 
-    if let Some(dict) = optimization {
-        set_nested_f64(&dict, "mu_init", &mut config.optimization.optim_mu_init)?;
-        set_nested_f64(&dict, "mu_decay", &mut config.optimization.optim_mu_decay)?;
+    if let Some(dict) = optimisation {
+        set_nested_f64(&dict, "mu_init", &mut config.optimisation.optim_mu_init)?;
+        set_nested_f64(&dict, "mu_decay", &mut config.optimisation.optim_mu_decay)?;
         set_nested_usize(
             &dict,
             "outer_iters",
-            &mut config.optimization.optim_outer_iters,
+            &mut config.optimisation.optim_outer_iters,
         )?;
         set_nested_usize(
             &dict,
             "inner_iters",
-            &mut config.optimization.optim_inner_iters,
+            &mut config.optimisation.optim_inner_iters,
         )?;
-        set_nested_f64(&dict, "step_size", &mut config.optimization.optim_step_size)?;
-        set_nested_f64(&dict, "tol", &mut config.optimization.optim_tol)?;
+        set_nested_f64(&dict, "step_size", &mut config.optimisation.optim_step_size)?;
+        set_nested_f64(&dict, "tol", &mut config.optimisation.optim_tol)?;
     }
 
     StandardConfig::set(config);
     Ok(())
 }
 
-/// Restore the shared standard consumer-theory configuration to its defaults.
+/// Restore the shared default consumer-theory configuration.
 #[pyfunction]
 #[pyo3(name = "restore_standard_config")]
 pub fn py_restore_standard_config() -> PyResult<()> {

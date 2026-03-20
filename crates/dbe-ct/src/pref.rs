@@ -21,11 +21,15 @@ impl Default for CalcConfig {
 /// Standard consumer-theory configuration shared across default constructors.
 #[derive(Clone, Debug)]
 pub struct StandardConfig {
+    /// Shared defaults for preference construction and numerical evaluation.
     pub preference: PreferenceConfig,
+    /// Shared defaults for indifference-curve tracing.
     pub indifference: IndifferenceConfig,
-    pub optimization: OptimizationConfig,
+    /// Shared defaults for constrained bundle optimisation.
+    pub optimisation: OptimisationConfig,
 }
 
+/// Shared defaults for preference validation and local numerical evaluation.
 #[derive(Clone, Debug)]
 pub struct PreferenceConfig {
     /// Number of Sobol sequence points to sample for the rationality checks.
@@ -48,6 +52,7 @@ pub struct PreferenceConfig {
     pub calc_tolerance: f64,
 }
 
+/// Shared defaults for indifference-curve tracing.
 #[derive(Clone, Debug)]
 pub struct IndifferenceConfig {
     /// Number of points to trace along an indifference curve.
@@ -56,8 +61,9 @@ pub struct IndifferenceConfig {
     pub indiff_tol: f64,
 }
 
+/// Shared defaults for constrained bundle optimisation.
 #[derive(Clone, Debug)]
-pub struct OptimizationConfig {
+pub struct OptimisationConfig {
     /// Initial barrier weight for bundle optimisation.
     pub optim_mu_init: f64,
     /// Barrier decay for bundle optimisation.
@@ -90,7 +96,7 @@ impl Default for StandardConfig {
                 indiff_n_points: 200,
                 indiff_tol: 1e-10,
             },
-            optimization: OptimizationConfig {
+            optimisation: OptimisationConfig {
                 optim_mu_init: 1.0,
                 optim_mu_decay: 0.1,
                 optim_outer_iters: 10,
@@ -135,14 +141,17 @@ impl Default for ValidationConfig {
 }
 
 impl StandardConfig {
+    /// Replace the shared default consumer-theory configuration.
     pub fn set(config: StandardConfig) {
         *STANDARD_CONFIG.write().unwrap() = config;
     }
 
+    /// Return a snapshot of the shared default consumer-theory configuration.
     pub fn get() -> StandardConfig {
         STANDARD_CONFIG.read().unwrap().clone()
     }
 
+    /// Build a validation configuration from the shared defaults.
     pub fn validation_config(&self, validate: bool) -> ValidationConfig {
         ValidationConfig {
             samples: self.preference.samples,
@@ -156,6 +165,7 @@ impl StandardConfig {
         }
     }
 
+    /// Build a numerical calculation configuration from the shared defaults.
     pub fn calc_config(&self) -> CalcConfig {
         CalcConfig {
             epsilon: self.preference.calc_epsilon,
@@ -164,9 +174,12 @@ impl StandardConfig {
     }
 }
 
+/// Error type for fallible preference evaluation paths.
 #[derive(Debug)]
 pub enum PreferenceError<E> {
+    /// Invalid configuration or optimisation input.
     Config(String),
+    /// Evaluation failure raised by the caller-supplied utility function.
     Eval(E),
 }
 
@@ -176,7 +189,7 @@ impl<E> PreferenceError<E> {
     }
 }
 
-/// Data structure to represent the preference of a consumer
+/// Consumer preference backed by an infallible utility function.
 pub struct Preference<F>
 where
     F: Fn(&[f64]) -> f64,
@@ -188,7 +201,10 @@ where
     calc_config: CalcConfig,
 }
 
-/// Fallible preference representation for callback-driven frontends.
+/// Consumer preference backed by a fallible utility function.
+///
+/// This variant is intended for frontends that need utility evaluation to
+/// return errors instead of assuming the utility function is infallible.
 pub struct FalliblePreference<F, E>
 where
     F: Fn(&[f64]) -> Result<f64, E>,

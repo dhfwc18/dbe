@@ -29,12 +29,12 @@ impl Default for OptimConfig {
     fn default() -> Self {
         let standard = StandardConfig::get();
         Self {
-            mu_init: standard.optimization.optim_mu_init,
-            mu_decay: standard.optimization.optim_mu_decay,
-            outer_iters: standard.optimization.optim_outer_iters,
-            inner_iters: standard.optimization.optim_inner_iters,
-            step_size: standard.optimization.optim_step_size,
-            tol: standard.optimization.optim_tol,
+            mu_init: standard.optimisation.optim_mu_init,
+            mu_decay: standard.optimisation.optim_mu_decay,
+            outer_iters: standard.optimisation.optim_outer_iters,
+            inner_iters: standard.optimisation.optim_inner_iters,
+            step_size: standard.optimisation.optim_step_size,
+            tol: standard.optimisation.optim_tol,
         }
     }
 }
@@ -133,6 +133,11 @@ pub fn optimal_bundle<F: Fn(&[f64]) -> f64>(
     Ok(x)
 }
 
+/// Fallible variant of [`optimal_bundle`] for callback-driven frontends.
+///
+/// This function mirrors [`optimal_bundle`] but propagates utility-evaluation
+/// errors from the supplied preference instead of assuming the utility
+/// function is infallible.
 pub fn optimal_bundle_fallible<F, E>(
     pref: &FalliblePreference<F, E>,
     constraint: &BudgetConstraint,

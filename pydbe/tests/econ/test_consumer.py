@@ -69,7 +69,7 @@ def test_standard_config_with_std_inputs_return_expected_val():
     original = consumer.Config.state()
     consumer.Config.Preference.set(samples=100, seed=42, calc_epsilon=1e-5)
     consumer.Config.Indifference.set(n_points=75)
-    consumer.Config.Optimization.set(outer_iters=12)
+    consumer.Config.Optimisation.set(outer_iters=12)
     out = consumer.Config.state()
 
     consumer.Config.restore_defaults()
@@ -79,4 +79,4 @@ def test_standard_config_with_std_inputs_return_expected_val():
     assert out["preference"]["seed"] == 42
     assert out["preference"]["calc_epsilon"] == pytest.approx(1e-5, abs=1e-12)
     assert out["indifference"]["n_points"] == 75
-    assert out["optimization"]["outer_iters"] == 12
+    assert out["optimisation"]["outer_iters"] == 12

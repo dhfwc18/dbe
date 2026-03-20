@@ -101,6 +101,11 @@ pub fn trace_2d<F: Fn(&[f64]) -> f64>(
     Ok(points)
 }
 
+/// Fallible variant of [`trace_2d`] for callback-driven frontends.
+///
+/// This function mirrors [`trace_2d`] but propagates utility-evaluation
+/// errors from the supplied preference instead of assuming the utility
+/// function is infallible.
 pub fn trace_2d_fallible<F, E>(
     pref: &FalliblePreference<F, E>,
     target_utility: f64,

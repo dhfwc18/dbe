@@ -1,7 +1,7 @@
 use dbe_cashflow as cashflow;
 use pyo3::prelude::*;
 
-/// Calculate the present value of a cashflow.
+/// Discount a single cashflow to present value.
 ///
 /// Parameters
 /// ----------
@@ -23,7 +23,7 @@ pub fn py_cal_pv(cashflow_value: f64, discount_rate: f64, timestep: f64) -> PyRe
     Ok(cashflow::cal_pv(cashflow_value, discount_rate, timestep))
 }
 
-/// Calculate the present value of a series of cashflows.
+/// Discount a sequence of cashflows to present value.
 ///
 /// Parameters
 /// ----------
@@ -43,8 +43,7 @@ pub fn py_cal_pv_from_cf(cashflows: Vec<f64>, discount_rate: f64) -> PyResult<f6
     Ok(cashflow::cal_pv_from_cf(&cashflows, discount_rate))
 }
 
-/// Calculate the uniform nominal value needed at each time step to match a
-/// target present value.
+/// Spread a target present value uniformly across future periods.
 ///
 /// Parameters
 /// ----------
@@ -55,7 +54,7 @@ pub fn py_cal_pv_from_cf(cashflows: Vec<f64>, discount_rate: f64) -> PyResult<f6
 /// discount_rate : float
 ///     The discount rate to apply to the cashflow.
 /// w_init : bool, optional
-///     Whether to include step 0 in the calculation. Defaults to False.
+///     Whether to include step 0 in the calculation. Defaults to ``False``.
 ///
 /// Returns
 /// -------
